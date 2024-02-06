@@ -35,7 +35,7 @@ function generate_redeem_Script(preimage) {
 
     let privateKey = 'f3aa7c12a261510e20aea92c22842cc4daee282c1db40303486256f477bfc9de';
     let publicKey = '02705c3aebbad8802720507e9fdff82d75827239021af780097c226e2e1130b3de';
-    let pub2 = Buffer.from(publicKey, 'hex')
+    let pub2 = Buffer.from(publicKey, 'hex');
     let privateBuf = Buffer.from(privateKey, 'hex');
     var keyPair = ECPair.fromPrivateKey(privateBuf, { network: TESTNET });
 
@@ -77,28 +77,40 @@ function spendFromScript(preImageHex) {
     const unlockingScript = bitcoin.script.compile([
         Buffer.from(preImageHex, 'hex') // Push the provided preimage onto the stack
     ]);
-    
     console.log('Unlocking Script:', unlockingScript.toString('hex'));
+
+    //Test redeem script
+    const redeemScript = bitcoin.script.compile([Buffer.from('a9483fd03b2e8a2a7a6430f708c5a8501e82d36063b3a6a5224f2f058a85a7c482f13f2d801', 'hex')]);
+    
     
     const outputNumber = 0;
-    const txid = '067165e054372055f7259e86c56e1043052b17719618b8c8bb20e205435f1cc5';
+    const txid = '0c091221f0d09290d8e03bd35303a89231377fdde19b61851f06cdab1d43a810';
     const amount = 0.00010073;
     const psbt = new bitcoin.Psbt({network: TESTNET});
     const minerFee = 10000;
     const destinationAddress = 'muRbmwCkWAsXSjs78idn6CYxsdKGgcAq2X';
     const outputAmount = amount*1e8 - minerFee;
-    const userBal = 0.00070073 ;
+    const userBal = 0.00070073;
+    const fullRawTransactionHex = "0200000001c51c5f4305e220bbc8b8189671172b0543106ec5869e25f755203754e0657106000000006a4730440220491c3a0ceb5a691f9a84126a89b4ae08ac8b3be863294e938bc5ab6223aa744602205e8de7db21dec6e1aa3ffc0b16ff0556d9ce600ef32e42b4a80983a1cada3c26012102705c3aebbad8802720507e9fdff82d75827239021af780097c226e2e1130b3deffffffff01490000000000000017a9142e499d5c9ec379f2a3e20a639893a868d5640f658700000000";
     
     // Add the input from the previous transaction
     psbt.addInput({
         hash: txid,
         index: outputNumber,
+        sequence: null,
+        redeemScript: unlockingScript,
+        nonWitnessUtxo: Buffer.from(fullRawTransactionHex, 'hex'),
         witnessUtxo: {
-            script: Buffer.from(providedPreimageHash, 'hex'),
+            script: redeemScript,
             value: amount // Provide the value of the previous UTXO in satoshis
         }
     });
     
+    psbt.addOutput({
+        address: destinationAddress,
+        value: outputAmount
+    });
+
     psbt.addOutput({
         address: destinationAddress,
         value: outputAmount
@@ -108,8 +120,8 @@ function spendFromScript(preImageHex) {
     let privateBuf = Buffer.from(privateKey, 'hex');
     var keyPair = ECPair.fromPrivateKey(privateBuf, { network: TESTNET });
     
-    console.log("Debug========================");
     psbt.signInput(0, keyPair);
+    // console.log("Debug========================");
 
     psbt.finalizeInput(0);
 
@@ -135,5 +147,5 @@ async function broadcastTransaction(signedTransactionHex) {
       });
 }
 
-// generate_redeem_Script(preImageHex);
+generate_redeem_Script(preImageHex);
 spendFromScript(preImageHex);
