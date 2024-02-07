@@ -72,6 +72,7 @@ function generate_redeem_Script(preimage) {
 
 function spendFromScript(preImageHex) {
     const providedPreimageHash = crypto.createHash('sha256').update(preimage).digest('hex');
+    const PreImageRedeemScript = bitcoin.script.compile([Buffer.from(providedPreimageHash, 'hex')]);
 
     // Combine the preimage and hash to create the unlocking script
     const unlockingScript = bitcoin.script.compile([
@@ -80,7 +81,7 @@ function spendFromScript(preImageHex) {
     console.log('Unlocking Script:', unlockingScript.toString('hex'));
 
     //Test redeem script
-    const redeemScript = bitcoin.script.compile([Buffer.from('a9483fd03b2e8a2a7a6430f708c5a8501e82d36063b3a6a5224f2f058a85a7c482f13f2d801', 'hex')]);
+    // const redeemScript = bitcoin.script.compile([Buffer.from(preImageHex, 'hex')]);
     
     
     const outputNumber = 0;
@@ -98,10 +99,10 @@ function spendFromScript(preImageHex) {
         hash: txid,
         index: outputNumber,
         sequence: null,
-        redeemScript: unlockingScript,
+        redeemScript: PreImageRedeemScript,
         nonWitnessUtxo: Buffer.from(fullRawTransactionHex, 'hex'),
         witnessUtxo: {
-            script: redeemScript,
+            script: PreImageRedeemScript,
             value: amount // Provide the value of the previous UTXO in satoshis
         }
     });
@@ -147,5 +148,5 @@ async function broadcastTransaction(signedTransactionHex) {
       });
 }
 
-generate_redeem_Script(preImageHex);
+// generate_redeem_Script(preImageHex);
 spendFromScript(preImageHex);
